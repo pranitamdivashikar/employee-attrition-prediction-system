@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 
@@ -74,7 +76,13 @@ def get_risk_category(prob):
 df_results['Risk_Category'] = df_results['Attrition_Probability'].apply(get_risk_category)
 
 # Dashboard Tabs
-tab1, tab2, tab3 = st.tabs(["📈 Attrition Risk Overview", "👤 Employee Risk Profile", "🔍 Department-Level View"])
+# Dashboard Tabs (Make sure to include all 4 tabs here)
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📈 Attrition Risk Overview",
+    "👤 Employee Risk Profile",
+    "🔍 Department-Level View",
+    "🧠 Explainability Panel"
+])
 
 with tab1:
     st.subheader("Overall Attrition Risk Distribution")
@@ -114,3 +122,26 @@ with tab3:
     dept_risk = df_results.groupby('Department')['Attrition_Probability'].mean().reset_index()
     st.dataframe(dept_risk)
     st.bar_chart(dept_risk.set_index('Department'))
+
+with tab4:
+    st.subheader("Model Feature Importance (Explainability)")
+    st.markdown("This chart highlights the primary factors driving employee attrition predictions across the organization.")
+
+    # Calculate feature importances from trained RandomForest model
+    importances = model.feature_importances_
+    feature_names = X.columns
+    feature_imp_df = pd.DataFrame({'Feature': feature_names, 'Importance': importances})
+    feature_imp_df = feature_imp_df.sort_values(by='Importance', ascending=False).head(10)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    bars = sns.barplot(x='Importance', y='Feature', data=feature_imp_df, hue='Feature', palette='viridis', ax=ax)
+   
+    # Loop to display value on each bar
+    for p in bars.patches:
+        width = p.get_width()
+        ax.text(width + 0.002, p.get_y() + p.get_height()/2., 
+                f'{width:.3f}', 
+                ha="left", va="center", fontsize=10, color='black', weight='bold')
+    
+    ax.set_title("Top 10 Most Influential Features for Attrition Prediction")
+    st.pyplot(fig)
